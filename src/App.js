@@ -15,14 +15,10 @@ class App extends Component {
   componentDidMount() {
     let formHeight = this.form.offsetHeight;
 
-    const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+    const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 400;
     const scene = this.scene = new THREE.Scene();
 
-    // LIGHT
-    const light = new THREE.Light(0xffffff, 1000);
-    light.position.set(0, 0, 0);
-    scene.add(light);
 
 
     const renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -30,7 +26,18 @@ class App extends Component {
     const width = window.innerWidth;
     const height = window.innerHeight - formHeight;
     renderer.setSize( width, height );
-    this.canvasSizes = { width, height }
+    this.canvasSizes = { width, height };
+
+    // LIGHTS
+    const light1 = new THREE.PointLight(0xffffff, 10);
+    light1.position.set(width / 2, height / 2, width / 2);
+    scene.add(light1);
+
+    const light2 = new THREE.PointLight(0xffffff, 10);
+    light2.position.set(-width / 2, -height / 2, -width / 2);
+    scene.add(light2);
+
+    
     const controls = new OrbitControls( camera, renderer.domElement );
     this.app.appendChild( renderer.domElement );
 
@@ -83,7 +90,7 @@ class App extends Component {
         break;
     }
 
-    const material = new THREE.MeshBasicMaterial( { color: 0x000055 } );
+    const material = new THREE.MeshPhongMaterial( { color: 0x000055 } );
     const mesh = new THREE.Mesh( geometry, material );
     mesh.position.set(
       (Math.random() - 0.5) * this.canvasSizes.width,

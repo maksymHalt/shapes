@@ -3,69 +3,107 @@ import './App.css';
 const THREE = window.THREE = require('three');
 const OrbitControls = require('three-orbit-controls')(THREE);
 
-const onSubmit = (event) => {
-  event.preventDefault();
-  const fields = event.target.elements;
-  const {
-    shape: { value: shape },
-    scale: { value: scale }
-  } = fields;
-  console.dir(shape);
-  console.dir(scale);
-}
-
 class App extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      list: []
+    }
+  }
+
   componentDidMount() {
-    var camera, scene, renderer, controls;
-			var cube;
-      init();
-      animate();
-			function init() {
+    let formHeight = this.form.offsetHeight;
 
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-        camera.position.z = 400;
-        scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera.position.z = 400;
+    const scene = this.scene = new THREE.Scene();
 
-        // LIGHT
-        var light = new THREE.PointLight(0xffffff);
-        light.position.set(0,100,0);
-        scene.add(light);
+    // LIGHT
+    const light = new THREE.Light(0xffffff, 1000);
+    light.position.set(0, 0, 0);
+    scene.add(light);
 
-        var geometry = new THREE.BoxGeometry( 100, 100, 100 );
-        var material = new THREE.MeshBasicMaterial( {color: 0x000055} );
-        cube = new THREE.Mesh( geometry, material );
-        scene.add( cube );
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-        renderer.setPixelRatio( window.devicePixelRatio );
-        const app = document.body.querySelector('.app');
-				renderer.setSize( window.innerWidth, window.innerHeight - app.offsetHeight );
-        controls = new OrbitControls( camera, renderer.domElement );
-        app.appendChild( renderer.domElement );
-        window.addEventListener( 'resize', onWindowResize, false );
-        renderer.render( scene, camera );
-        controls.update();
-			}
-			function onWindowResize() {
-        const app = document.body.querySelector('.app'); 
-				camera.aspect = window.innerWidth / window.innerHeight - app.offsetHeight;
-				camera.updateProjectionMatrix();
-				renderer.setSize( window.innerWidth, window.innerHeight - app.offsetHeight );
-      }
+
+    const renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    const width = window.innerWidth;
+    const height = window.innerHeight - formHeight;
+    renderer.setSize( width, height );
+    this.canvasSizes = { width, height }
+    const controls = new OrbitControls( camera, renderer.domElement );
+    this.app.appendChild( renderer.domElement );
+
+    const onWindowResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight - formHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize( width, height );
+      this.canvasSizes = { width, height }
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+    const animate = () => {
+      requestAnimationFrame( animate );
+      renderer.render( scene, camera );
       
-      
-      function animate() {
-				requestAnimationFrame( animate );
-				cube.rotation.x += 0.005;
-				cube.rotation.y += 0.01;
-				renderer.render( scene, camera );
-				controls.update();
-			}
+      controls.update();
+    }
+    animate();
+  }
+
+  createShape = (event) => {
+    event.preventDefault();
+    const fields = event.target.elements;
+    const {
+      shape: { value: shape },
+      scale: { value: scale }
+    } = fields;
+  
+    const size = scale * 10;
+    let geometry;
+    switch (shape) {
+      case 'Cube':
+        geometry = new THREE.BoxGeometry( size, size, size );
+        break;
+      case 'Sphere':
+        geometry = new THREE.SphereGeometry( size, size, size );
+        break;
+      case 'Pyramid':
+        geometry = new THREE.CylinderGeometry( 1, size * 3, size * 3, 4 );
+        break;
+      case 'Cone':
+        geometry = new THREE.ConeGeometry( size, size * 2, size );
+        break;
+      case 'Cylinder':
+        geometry = new THREE.CylinderGeometry( size, size, size * 2, size );
+        break;
+      default:
+        break;
+    }
+
+    const material = new THREE.MeshBasicMaterial( { color: 0x000055 } );
+    const mesh = new THREE.Mesh( geometry, material );
+    mesh.position.set(
+      (Math.random() - 0.5) * this.canvasSizes.width,
+      (Math.random() - 0.5) * this.canvasSizes.height,
+      (Math.random() - 0.5) * this.canvasSizes.width
+    );
+    this.scene.add( mesh );
+    this.setState(({ list }) => ({ list: [...list, mesh] }))
+  }
+
+  deleteShape = (mesh) => () => {
+    this.scene.remove(mesh);
+    this.setState(({ list }) => ({ list: list.filter(item => item !== mesh) }))
   }
 
   render() {
+    const { list } = this.state;
     return (
-      <div className="app">
-        <form className="form" onSubmit={onSubmit}>
+      <div className="app" ref={app => this.app = app}>
+        <form className="form" ref={form => this.form = form} onSubmit={this.createShape}>
           <select name="shape" required>
             <option>Cube</option>
             <option>Sphere</option>
@@ -73,9 +111,18 @@ class App extends Component {
             <option>Cone</option>
             <option>Cylinder</option>
           </select>
-          <input name="scale" type="number" min="1" max="10" required />
+          <input name="scale" type="number" min="1" max="10" defaultValue="7" required />
           <button>Create</button>
         </form>
+        {list.length !== 0 && <div className="panel-list">
+          {list.map(mesh => (
+            <div className="panel-item">
+              {mesh.uuid}
+              <button onClick={this.deleteShape(mesh)}>X</button>
+            </div>
+          ))}
+        </div>
+        }
       </div>
     );
   }

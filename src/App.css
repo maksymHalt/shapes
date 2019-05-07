@@ -1,8 +1,19 @@
 
 .form {
-  padding: 10px 20px;
+  padding: 5px 10px;
 }
 
 .form > * + * {
   margin-left: 10px;
+}
+
+.panel-list {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: #fff;
+  width: 400px;
+  padding: 5px;
+  max-height: 25vh;
+  overflow: auto;
 }
